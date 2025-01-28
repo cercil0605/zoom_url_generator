@@ -32,15 +32,6 @@ class ZoomControllersController < ApplicationController
     if response.code.to_i == 200 && result["access_token"]
       access_token = result["access_token"]
       session[:zoom_access_token] = access_token
-
-      # Zoom APIを使ってミーティングを作成
-      meeting_url = create_zoom_meeting(access_token)
-
-      if meeting_url
-        render json: { message: "Zoom authenticated successfully", meeting_url: meeting_url }, status: :ok
-      else
-        render json: { error: "Failed to create Zoom meeting" }, status: :unprocessable_entity
-      end
     else
       # エラー時のレスポンス
       render json: { error: "Failed to get access token", details: result }, status: :unprocessable_entity
@@ -49,28 +40,35 @@ class ZoomControllersController < ApplicationController
 
   private
 
-  def create_zoom_meeting(access_token)
-    # Zoomミーティング作成APIを呼び出し
+  def create_zoom_meeting # create zoomURL based on student info from react
+    # meeting info
+    student_name = params[:student_name]
+    selected_date = params[:selected_date]
+    start_time = params[:start_time]
+    # call zoomAPI
     uri = URI.parse("https://api.zoom.us/v2/users/me/meetings")
+    # prepare access
+    access_token = session[:zoom_access_token]
     request = Net::HTTP::Post.new(uri)
     request["Authorization"] = "Bearer #{access_token}"
     request["Content-Type"] = "application/json"
-
-    # ミーティングの設定
+    # setting meeting
     body = {
-      topic: "Sample Meeting",
-      type: 2,  # Scheduled meeting
-      start_time: (Time.now + 1.hour).utc.strftime('%Y-%m-%dT%H:%M:%SZ'),  # 現在時刻から1時間後
-      duration: 30,
+      topic: "#{selected_date} #{student_name}さん #{start_time} - ",
+      type: 2,
+      start_time: start_time,
+      duration: 90,
       timezone: "Asia/Tokyo"
     }
     request.body = body.to_json
-
-    # リクエスト送信
+    # send request
     response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http| http.request(request) }
     result = JSON.parse(response.body)
-
-    # 成功時にZoomミーティングのURLを返す
-    response.code.to_i == 201 ? result["join_url"] : nil
+    # responce
+    if response.code.to_i == 201 && result["join_url"]
+      render json: { url: result["join_url"] }
+    else
+      render json: { error: result["error"] }
+    end
   end
 end
