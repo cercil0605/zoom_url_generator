@@ -44,6 +44,7 @@ class ZoomControllersController < ApplicationController
     student_name = params[:student_name]
     selected_date = params[:selected_date]
     start_time = params[:start_time]
+    timezone = "Asia/Tokyo"
     # call zoomAPI
     uri = URI.parse("https://api.zoom.us/v2/users/me/meetings")
     # prepare access
@@ -55,9 +56,9 @@ class ZoomControllersController < ApplicationController
     body = {
       topic: "#{selected_date} #{student_name}さん #{start_time} - ",
       type: 2,
-      start_time: start_time,
+      start_time: Time.zone.parse("#{date} #{time}").in_time_zone(timezone).iso8601,
       duration: 90,
-      timezone: "Asia/Tokyo"
+      timezone: timezone
     }
     request.body = body.to_json
     # send request

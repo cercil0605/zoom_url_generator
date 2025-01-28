@@ -32,5 +32,6 @@ module ZoomAptApp
     config.session_store :cookie_store, key: '_your_app_session'
     config.middleware.use ActionDispatch::Cookies
     config.middleware.use ActionDispatch::Session::CookieStore
+    config.time_zone = 'Asia/Tokyo'
   end
 end
