@@ -32,6 +32,8 @@ class ZoomControllersController < ApplicationController
     if response.code.to_i == 200 && result["access_token"]
       access_token = result["access_token"]
       session[:zoom_access_token] = access_token
+      # redirect front page for setup meeting
+      redirect_to "http://localhost:3001/dashboard?access_token=#{result['access_token']}&join_url=#{result['join_url']}"
     else
       # エラー時のレスポンス
       render json: { error: "Failed to get access token", details: result }, status: :unprocessable_entity
@@ -40,7 +42,7 @@ class ZoomControllersController < ApplicationController
 
   private
 
-  def create_zoom_meeting # create zoomURL based on student info from react
+  def create_zoom_meeting # create zoomURL based on student info from React
     # meeting info
     student_name = params[:student_name]
     selected_date = params[:selected_date]
@@ -64,11 +66,24 @@ class ZoomControllersController < ApplicationController
     # send request
     response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http| http.request(request) }
     result = JSON.parse(response.body)
-    # responce
+    # generate template
     if response.code.to_i == 201 && result["join_url"]
-      render json: { url: result["join_url"] }
+      # template message val
+      student_name = params[:student_name] || "生徒"
+      message_topic = result["topic"]
+      message_start_time = DateTime.parse(result["start_time"]).strftime("%Y年%m月%d日 %H:%M")
+      join_url = result["join_url"]
+      # template message
+      message = "#{student_name}さん、本日は授業お疲れ様でした。次回のURLです。\n"
+      message += "トピック：#{message_topic}\n"
+      message += "時刻：#{message_start_time}\n"
+      message += "URL：#{join_url}"
+
+      # return status and message to React(success)
+      render json: { status: "success", message: message }, status: :created
     else
-      render json: { error: result["error"] }
+      # return status and message to React(failed)
+      render json: { status: "error", message: "生成に失敗しました。" }, status: :internal_server_error
     end
   end
 end
