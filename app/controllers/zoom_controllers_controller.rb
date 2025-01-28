@@ -39,9 +39,6 @@ class ZoomControllersController < ApplicationController
       render json: { error: "Failed to get access token", details: result }, status: :unprocessable_entity
     end
   end
-
-  private
-
   def create_zoom_meeting # create zoomURL based on student info from React
     # meeting info
     student_name = params[:student_name]
