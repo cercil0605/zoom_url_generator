@@ -38,7 +38,7 @@ class ZoomControllersController < ApplicationController
         session[:zoom_access_token] = access_token
         # redirect front page for setup meeting
         redirect_to "http://localhost:3000/dashboard"
-        puts "Access Token: #{access_token}"
+        puts "(/oauth/callback): #{access_token}"
       else
         render json: { error: "Failed to get access token", details: result }, status: :unprocessable_entity
       end
