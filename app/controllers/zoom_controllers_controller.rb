@@ -8,37 +8,46 @@ class ZoomControllersController < ApplicationController
   end
 
   def oauth_callback
-    code = params[:code]
-    client_id = ENV["ZOOM_CLIENT_ID"]
-    client_secret = ENV["ZOOM_CLIENT_SECRET"]
-    redirect_uri = ENV["ZOOM_REDIRECT_URI"]
+    begin
+      code = params[:code]
+      client_id = ENV["ZOOM_CLIENT_ID"]
+      client_secret = ENV["ZOOM_CLIENT_SECRET"]
+      redirect_uri = ENV["ZOOM_REDIRECT_URI"]
 
-    # アクセストークンをリクエスト
-    token_url = "https://zoom.us/oauth/token"
-    uri = URI.parse(token_url)
-    request = Net::HTTP::Post.new(uri)
-    request.set_form_data({
-                            "grant_type" => "authorization_code",
-                            "code" => code,
-                            "redirect_uri" => redirect_uri
-                          })
-    request.basic_auth(client_id, client_secret)
+      # アクセストークンをリクエスト
+      token_url = "https://zoom.us/oauth/token"
+      uri = URI.parse(token_url)
+      request = Net::HTTP::Post.new(uri)
+      request.set_form_data({
+                              "grant_type" => "authorization_code",
+                              "code" => code,
+                              "redirect_uri" => redirect_uri
+                            })
+      request.basic_auth(client_id, client_secret)
 
-    # リクエスト送信
-    response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http| http.request(request) }
-    result = JSON.parse(response.body)
+      # リクエスト送信
+      response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http| http.request(request) }
+      result = JSON.parse(response.body)
 
-    # アクセストークン取得成功
-    if response.code.to_i == 200 && result["access_token"]
-      access_token = result["access_token"]
-      session[:zoom_access_token] = access_token
-      # redirect front page for setup meeting
-      redirect_to "http://localhost:3001/dashboard?access_token=#{result['access_token']}&join_url=#{result['join_url']}"
-    else
-      # エラー時のレスポンス
-      render json: { error: "Failed to get access token", details: result }, status: :unprocessable_entity
+      puts "Response Code: #{response.code}"
+      puts "Response Body: #{result}"
+
+      # アクセストークン取得成功
+      if response.code.to_i == 200 && result["access_token"]
+        access_token = result["access_token"]
+        session[:zoom_access_token] = access_token
+        # redirect front page for setup meeting
+        redirect_to "http://localhost:3000/dashboard"
+        puts "Access Token: #{access_token}"
+      else
+        render json: { error: "Failed to get access token", details: result }, status: :unprocessable_entity
+      end
+    rescue => e
+      puts "Error in oauth_callback: #{e.message}"
+      render json: { error: "Something went wrong", details: e.message }, status: :internal_server_error
     end
   end
+
   def create_zoom_meeting # create zoomURL based on student info from React
     # meeting info
     student_name = params[:student_name]
@@ -49,21 +58,28 @@ class ZoomControllersController < ApplicationController
     uri = URI.parse("https://api.zoom.us/v2/users/me/meetings")
     # prepare access
     access_token = session[:zoom_access_token]
+    # check token (なぜかnull)
+    puts "(/create) #{access_token}"
     request = Net::HTTP::Post.new(uri)
     request["Authorization"] = "Bearer #{access_token}"
     request["Content-Type"] = "application/json"
+
     # setting meeting
     body = {
       topic: "#{selected_date} #{student_name}さん #{start_time} - ",
       type: 2,
-      start_time: Time.zone.parse("#{date} #{time}").in_time_zone(timezone).iso8601,
+      start_time: Time.zone.parse("#{selected_date} #{start_time}").in_time_zone(timezone).iso8601,
       duration: 90,
       timezone: timezone
     }
+    # print(Time.zone.parse("#{selected_date} #{start_time}").in_time_zone(timezone).iso8601)
     request.body = body.to_json
     # send request
     response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http| http.request(request) }
     result = JSON.parse(response.body)
+
+    puts "ResponceCode #{response.code}"
+    puts "Response Body: #{result}"
     # generate template
     if response.code.to_i == 201 && result["join_url"]
       # template message val
