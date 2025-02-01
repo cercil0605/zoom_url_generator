@@ -102,7 +102,7 @@ class ZoomControllersController < ApplicationController
       render json: { status: "success", message: message }, status: :created
     else
       # return status and message to React(failed)
-      render json: { status: "error", message: result["message"] }, status: :unauthorized
+      render json: { status: "error", message: result["message"] }, status: response.code
     end
   end
 end
