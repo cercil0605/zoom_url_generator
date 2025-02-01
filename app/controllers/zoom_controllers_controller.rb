@@ -35,7 +35,10 @@ class ZoomControllersController < ApplicationController
       # アクセストークン取得成功
       if response.code.to_i == 200 && result["access_token"]
         access_token = result["access_token"]
+        # トークン情報をsessionに入れる
         session[:zoom_access_token] = access_token
+        session[:zoom_refresh_token] = result["refresh_token"]
+        session[:zoom_expires_at] = Time.now + result["expires_in"].to_i
         # redirect front page for setup meeting
         redirect_to "http://localhost:3000/dashboard"
         puts "(/oauth/callback): #{access_token}"
@@ -59,7 +62,7 @@ class ZoomControllersController < ApplicationController
     # prepare access token
     access_token = session[:zoom_access_token]
     # for unauthorized user
-    if access_token == nil
+    if ZoomTokenMaker.check_access_token == false
       render json: { status: "error", message: "Zoomアカウントを認証してください" }, status: :unauthorized
       return
     end
