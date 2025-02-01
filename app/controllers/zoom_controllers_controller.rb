@@ -56,36 +56,41 @@ class ZoomControllersController < ApplicationController
     timezone = "Asia/Tokyo"
     # call zoomAPI
     uri = URI.parse("https://api.zoom.us/v2/users/me/meetings")
-    # prepare access
+    # prepare access token
     access_token = session[:zoom_access_token]
-    # check token (なぜかnull)
+    # for unauthorized user
+    if access_token == nil
+      render json: { status: "error", message: "Zoomアカウントを認証してください" }, status: :unauthorized
+      return
+    end
+    # check token
     puts "(/create) #{access_token}"
     request = Net::HTTP::Post.new(uri)
     request["Authorization"] = "Bearer #{access_token}"
     request["Content-Type"] = "application/json"
-
     # setting meeting
     body = {
       topic: "#{selected_date} #{student_name}さん #{start_time} - ",
       type: 2,
-      start_time: Time.zone.parse("#{selected_date} #{start_time}").in_time_zone(timezone).iso8601,
+      start_time: Time.zone.parse("#{selected_date} #{start_time}").in_time_zone(timezone).iso8601, # set time based on iso8601, Asia/Tokyo timezone
       duration: 90,
       timezone: timezone
     }
-    # print(Time.zone.parse("#{selected_date} #{start_time}").in_time_zone(timezone).iso8601)
     request.body = body.to_json
     # send request
     response = Net::HTTP.start(uri.hostname, uri.port, use_ssl: true) { |http| http.request(request) }
     result = JSON.parse(response.body)
-
+    # print API result from ZOOM
     puts "ResponceCode #{response.code}"
     puts "Response Body: #{result}"
     # generate template
     if response.code.to_i == 201 && result["join_url"]
+      # print generated meeting time
+      puts "Meeting Time: #{Time.zone.parse(result["start_time"]).strftime("%Y年%m月%d日 %H:%M")}"
       # template message val
       student_name = params[:student_name] || "生徒"
       message_topic = result["topic"]
-      message_start_time = DateTime.parse(result["start_time"]).strftime("%Y年%m月%d日 %H:%M")
+      message_start_time = Time.zone.parse(result["start_time"]).strftime("%Y年%m月%d日 %H:%M")
       join_url = result["join_url"]
       # template message
       message = "#{student_name}さん、本日は授業お疲れ様でした。次回のURLです。\n"
@@ -97,7 +102,7 @@ class ZoomControllersController < ApplicationController
       render json: { status: "success", message: message }, status: :created
     else
       # return status and message to React(failed)
-      render json: { status: "error", message: "生成に失敗しました。" }, status: :internal_server_error
+      render json: { status: "error", message: result["message"] }, status: :unauthorized
     end
   end
 end
