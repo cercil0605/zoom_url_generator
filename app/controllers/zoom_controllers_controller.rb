@@ -61,10 +61,18 @@ class ZoomControllersController < ApplicationController
     uri = URI.parse("https://api.zoom.us/v2/users/me/meetings")
     # prepare access token
     access_token = session[:zoom_access_token]
+    refresh_token = session[:zoom_refresh_token]
+    expire_at = session[:zoom_expires_at]
     # for unauthorized user
-    if ZoomTokenMaker.check_access_token == false
-      render json: { status: "error", message: "Zoomアカウントを認証してください" }, status: :unauthorized
-      return
+    result = ZoomTokenMaker.check_access_token(access_token, refresh_token, expire_at)
+    if result == false
+        render json: { status: "error", message: "Zoomアカウントを認証してください" }, status: :unauthorized
+        return
+    elsif result.is_a? Hash
+      session[:zoom_access_token] = result["access_token"]
+      session[:zoom_refresh_token] = result["refresh_token"]
+      session[:zoom_expires_at] = result["expires_in"]
+      access_token = session[:zoom_access_token]
     end
     # check token
     puts "(/create) #{access_token}"

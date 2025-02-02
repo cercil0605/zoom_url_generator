@@ -2,16 +2,14 @@
 
 class ZoomTokenMaker
   # token関連の更新or確認処理
-  def check_access_token
+  def self.check_access_token(access_token, refresh_token, expire_at)
     # sessionに保存されたtokenの情報確認、使用可or不可を確認、不可ならばregenerate関数で生成したものをsessionに保存
     # nullならばログインすらできてないのでoauthしなおし
-    # return True -> トークンの確認done or regenerated
+    # return True -> トークンの確認done
     # return False -> access tokenがnull
-    access_token = session[:zoom_access_token]
-    refresh_token = session[:zoom_refresh_token]
-    expire_at = session[:zoom_expires_at]
+    # return data -> トークン情報をjson形式で返す
     # sessionに値が保持されているか
-    return false if access_token.nil || refresh_token.nil? || expire_at.nil?
+    return false if access_token.nil? || refresh_token.nil? || expire_at.nil?
     # まだaccess tokenは使用できる時間
     return true if expire_at < Time.now
     # 時間切れならば再生成、ここでエラーが発生したらfalse
@@ -36,11 +34,10 @@ class ZoomTokenMaker
     puts "(regenerate_token) Response Body: #{result}"
     # success regenerate tokens
     if response.code.to_i == 200
+      # json形式でcontrollerに返す
       puts "(regenerate_token) Regenerated access token"
-      session[:zoom_access_token] = result["access_token"]
-      session[:zoom_refresh_token] = result["refresh_token"]
-      session[:zoom_expires_at] = Time.now + result["expires_in"].to_i
-      true
+      result_hash = { access_token: result["access_token"], refresh_token: result["refresh_token"], expires_in: Time.now + result["expires_in"].to_i }
+      return result_hash
     end
     puts "(regenerate_token) error occurred: #{response.code}"
     false
