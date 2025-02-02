@@ -42,6 +42,7 @@ class ZoomControllersController < ApplicationController
         # redirect front page for setup meeting
         redirect_to "http://localhost:3000/dashboard"
         puts "(/oauth/callback): #{access_token}"
+        puts "(/oauth/callback): time #{session[:zoom_expires_at]}"
       else
         render json: { error: "Failed to get access token", details: result }, status: :unprocessable_entity
       end
@@ -69,10 +70,12 @@ class ZoomControllersController < ApplicationController
         render json: { status: "error", message: "Zoomアカウントを認証してください" }, status: :unauthorized
         return
     elsif result.is_a? Hash
+      puts "Throw"
       session[:zoom_access_token] = result["access_token"]
       session[:zoom_refresh_token] = result["refresh_token"]
       session[:zoom_expires_at] = result["expires_in"]
       access_token = session[:zoom_access_token]
+      puts "(/create) access_token: #{access_token}"
     end
     # check token
     puts "(/create) #{access_token}"
@@ -83,7 +86,7 @@ class ZoomControllersController < ApplicationController
     body = {
       topic: "#{selected_date} #{student_name}さん #{start_time} - ",
       type: 2,
-      start_time: Time.zone.parse("#{selected_date} #{start_time}").in_time_zone(timezone).iso8601, # set time based on iso8601, Asia/Tokyo timezone
+      start_time: "#{Time.zone.parse("#{selected_date} #{start_time}").in_time_zone(timezone).iso8601}",
       duration: 90,
       timezone: timezone
     }

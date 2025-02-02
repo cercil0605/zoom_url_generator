@@ -10,17 +10,16 @@ class ZoomTokenMaker
     # return data -> トークン情報をjson形式で返す
     # sessionに値が保持されているか
     return false if access_token.nil? || refresh_token.nil? || expire_at.nil?
-    # まだaccess tokenは使用できる時間
-    return true if expire_at < Time.now
+    # まだaccess tokenは使用できる時間, sessionに入るとiso8601型になる
+    return true if Time.parse(expire_at) > Time.now
     # 時間切れならば再生成、ここでエラーが発生したらfalse
-    regenerate_token
+    regenerate_token(refresh_token)
   end
-  def regenerate_token
+  def self.regenerate_token(refresh_token)
     # access tokenが期限切れならば新しいtokenと新しいrefresh-tokenを取得
     token_url = "https://zoom.us/oauth/token"
     client_id = ENV["ZOOM_CLIENT_ID"]
     client_secret = ENV["ZOOM_CLIENT_SECRET"]
-    refresh_token = session[:zoom_refresh_token]
     # postリクエスト送信準備
     uri = URI.parse(token_url)
     request = Net::HTTP::Post.new(uri)
@@ -32,6 +31,7 @@ class ZoomTokenMaker
     # print API result from ZOOM
     puts "(regenerate_token) ResponceCode: #{response.code}"
     puts "(regenerate_token) Response Body: #{result}"
+    puts "(regenerate_token) access_token: #{result['access_token']}"
     # success regenerate tokens
     if response.code.to_i == 200
       # json形式でcontrollerに返す
