@@ -19,9 +19,9 @@ class ZoomControllersController < ApplicationController
       uri = URI.parse(token_url)
       request = Net::HTTP::Post.new(uri)
       request.set_form_data({
-                              "grant_type" => "authorization_code",
-                              "code" => code,
-                              "redirect_uri" => redirect_uri
+                              grant_type: "authorization_code",
+                              code: code,
+                              redirect_uri: redirect_uri
                             })
       request.basic_auth(client_id, client_secret)
 
