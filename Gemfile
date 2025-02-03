@@ -42,6 +42,7 @@ group :development, :test do
   gem "httparty"
   gem "jwt"
   gem "dotenv"
+  gem "rack-cors"
 end
 
 
