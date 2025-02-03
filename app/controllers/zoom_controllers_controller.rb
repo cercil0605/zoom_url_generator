@@ -71,9 +71,10 @@ class ZoomControllersController < ApplicationController
         return
     elsif result.is_a? Hash
       puts "Throw"
-      session[:zoom_access_token] = result["access_token"]
-      session[:zoom_refresh_token] = result["refresh_token"]
-      session[:zoom_expires_at] = result["expires_in"]
+      # puts "(/create result token) #{result["access_token"]}"
+      session[:zoom_access_token] = result[:access_token]
+      session[:zoom_refresh_token] = result[:refresh_token]
+      session[:zoom_expires_at] = result[:expire_at]
       access_token = session[:zoom_access_token]
       puts "(/create) access_token: #{access_token}"
     end

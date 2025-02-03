@@ -36,7 +36,9 @@ class ZoomTokenMaker
     if response.code.to_i == 200
       # json形式でcontrollerに返す
       puts "(regenerate_token) Regenerated access token"
-      result_hash = { access_token: result["access_token"], refresh_token: result["refresh_token"], expires_in: Time.now + result["expires_in"].to_i }
+      # insert hash by literal style
+      result_hash = { access_token: result["access_token"], refresh_token: result["refresh_token"], expires_in: (Time.now + result["expires_in"].to_i) }
+      puts "(regenerate_token) Result Hash: #{result_hash}"
       return result_hash
     end
     puts "(regenerate_token) error occurred: #{response.code}"
