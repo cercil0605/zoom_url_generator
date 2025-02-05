@@ -1,7 +1,7 @@
 require_relative "boot"
 
 require "rails/all"
-
+require 'net/http'
 # Require the gems listed in Gemfile, including any gems
 # you've limited to :test, :development, or :production.
 Bundler.require(*Rails.groups)
@@ -29,7 +29,6 @@ module ZoomAptApp
     # Skip views, helpers and assets when generating a new resource.
     config.api_only = false
     # enable cookie or session
-    config.session_store :cookie_store, key: '_your_app_session'
     config.middleware.use ActionDispatch::Cookies
     config.middleware.use ActionDispatch::Session::CookieStore
     config.time_zone = 'Asia/Tokyo'

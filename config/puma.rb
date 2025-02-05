@@ -33,5 +33,5 @@ plugin :tmp_restart
 # In other environments, only set the PID file if requested.
 pidfile ENV["PIDFILE"] if ENV["PIDFILE"]
 # for nginx socket
-bind "unix://#{Rails.root}/tmp/sockets/puma.sock"
+bind "unix:///home/ubuntu/zoom_url_generator/tmp/sockets/puma.sock"
 
