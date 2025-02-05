@@ -34,3 +34,4 @@ plugin :tmp_restart
 pidfile ENV["PIDFILE"] if ENV["PIDFILE"]
 # for nginx socket
 bind "unix://#{Rails.root}/tmp/sockets/puma.sock"
+
