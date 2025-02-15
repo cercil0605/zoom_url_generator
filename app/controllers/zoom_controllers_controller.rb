@@ -40,7 +40,7 @@ class ZoomControllersController < ApplicationController
         session[:zoom_refresh_token] = result["refresh_token"]
         session[:zoom_expires_at] = Time.now + result["expires_in"].to_i
         # redirect front page for setup meeting
-        redirect_to "http://localhost:3000/dashboard"
+        redirect_to "https://zoomgen.cercil.net/dashboard"
         puts "(/oauth/callback): #{access_token}"
         puts "(/oauth/callback): time #{session[:zoom_expires_at]}"
       else
