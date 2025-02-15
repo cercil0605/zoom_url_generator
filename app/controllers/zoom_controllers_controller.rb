@@ -40,10 +40,9 @@ class ZoomControllersController < ApplicationController
         session[:zoom_refresh_token] = result["refresh_token"]
         session[:zoom_expires_at] = Time.now + result["expires_in"].to_i
         # redirect front page for setup meeting
+        redirect_to "http://localhost:3000/dashboard"
         puts "(/oauth/callback): #{access_token}"
         puts "(/oauth/callback): time #{session[:zoom_expires_at]}"
-        dashboard_url = "https://zoomgen.cercil.net/dashboard"
-        redirect_to dashboard_url, allow_other_host: true
       else
         render json: { error: "Failed to get access token", details: result }, status: :unprocessable_entity
       end
